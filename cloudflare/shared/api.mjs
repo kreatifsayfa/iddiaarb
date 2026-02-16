@@ -1,4 +1,4 @@
-﻿import { clamp, nowIso, parseFloatSafe, parseIntSafe } from "./helpers.mjs";
+import { clamp, nowIso, parseFloatSafe, parseIntSafe } from "./helpers.mjs";
 import { runHealthCheck, runScanner } from "./scanner.mjs";
 
 const SCAN_CACHE = new Map();
@@ -53,6 +53,21 @@ function readInt(search, key, defaultValue) {
   return Number.isFinite(parsed) ? parsed : defaultValue;
 }
 
+function readBool(search, key, defaultValue = false) {
+  const value = search.get(key);
+  if (value === null || value === "") {
+    return defaultValue;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+  return defaultValue;
+}
+
 function validateParamRanges(params) {
   if (params.bankroll <= 0 || params.bankroll > 100000000) {
     return "Invalid bankroll";
@@ -81,7 +96,7 @@ function validateParamRanges(params) {
   if (params.sample_check < 0 || params.sample_check > 50) {
     return "Invalid sample_check";
   }
-  if (!["flashscore", "sofascore", "multi"].includes(params.scraper_source)) {
+  if (!["flashscore", "soccer24", "livesport", "betexplorer", "sofascore", "multi"].includes(params.scraper_source)) {
     return "Invalid scraper_source";
   }
   if (!/^[A-Z]{2,10}$/.test(params.geo_ip_code)) {
@@ -93,8 +108,11 @@ function validateParamRanges(params) {
   if (params.max_bookmakers_per_event < 1 || params.max_bookmakers_per_event > 30) {
     return "Invalid max_bookmakers_per_event";
   }
-  if (params.quorum_min_sources < 1 || params.quorum_min_sources > 3) {
+  if (params.quorum_min_sources < 1 || params.quorum_min_sources > 5) {
     return "Invalid quorum_min_sources";
+  }
+  if (!/^[a-z]{2,5}$/i.test(params.betexplorer_lang)) {
+    return "Invalid betexplorer_lang";
   }
   return null;
 }
@@ -115,10 +133,16 @@ function parseScanParams(request, env) {
     sample_check: readInt(search, "sample_check", 5),
     include_prematch: readString(search, "include_prematch", "0") === "1",
     scraper_source: readString(search, "scraper_source", "flashscore"),
+    include_flashscore: readBool(search, "include_flashscore", true),
+    include_soccer24: readBool(search, "include_soccer24", true),
+    include_livesport: readBool(search, "include_livesport", true),
+    include_betexplorer: readBool(search, "include_betexplorer", true),
+    include_sofascore: readBool(search, "include_sofascore", false),
     geo_ip_code: readString(search, "geo_ip_code", "GB").toUpperCase(),
     geo_ip_subdivision: readString(search, "geo_ip_subdivision", "GBENG").toUpperCase(),
     max_bookmakers_per_event: readInt(search, "max_bookmakers_per_event", 8),
     quorum_min_sources: readInt(search, "quorum_min_sources", 2),
+    betexplorer_lang: readString(search, "betexplorer_lang", "en"),
     refresh: readString(search, "refresh", "0") === "1",
     limits_url: readString(search, "limits_url", ""),
     timeout_ms: Math.max(5000, parseIntSafe(env?.SCRAPER_TIMEOUT_MS, 20000)),
@@ -140,10 +164,16 @@ function makeCacheKey(params) {
     sample_check: params.sample_check,
     include_prematch: params.include_prematch,
     scraper_source: params.scraper_source,
+    include_flashscore: params.include_flashscore,
+    include_soccer24: params.include_soccer24,
+    include_livesport: params.include_livesport,
+    include_betexplorer: params.include_betexplorer,
+    include_sofascore: params.include_sofascore,
     geo_ip_code: params.geo_ip_code,
     geo_ip_subdivision: params.geo_ip_subdivision,
     max_bookmakers_per_event: params.max_bookmakers_per_event,
     quorum_min_sources: params.quorum_min_sources,
+    betexplorer_lang: params.betexplorer_lang,
     limits_url: params.limits_url,
   });
 }
@@ -256,10 +286,16 @@ export async function handleScanRequest(request, env) {
         sample_check: params.sample_check,
         include_prematch: params.include_prematch,
         scraper_source: params.scraper_source,
+        include_flashscore: params.include_flashscore,
+        include_soccer24: params.include_soccer24,
+        include_livesport: params.include_livesport,
+        include_betexplorer: params.include_betexplorer,
+        include_sofascore: params.include_sofascore,
         geo_ip_code: params.geo_ip_code,
         geo_ip_subdivision: params.geo_ip_subdivision,
         max_bookmakers_per_event: params.max_bookmakers_per_event,
         quorum_min_sources: params.quorum_min_sources,
+        betexplorer_lang: params.betexplorer_lang,
         limits_url: params.limits_url,
       },
       scan,

@@ -71,7 +71,7 @@ Opsiyonel:
 
 ### `GET /api/scan`
 Temel parametreler:
-- `scraper_source`: `flashscore` | `sofascore` | `multi`
+- `scraper_source`: `flashscore` | `soccer24` | `livesport` | `betexplorer` | `sofascore` | `multi`
 - `bankroll`
 - `min_margin`
 - `min_data_quality`
@@ -82,12 +82,13 @@ Temel parametreler:
 - `geo_ip_code`, `geo_ip_subdivision`
 - `max_bookmakers_per_event`
 - `quorum_min_sources` (multi icin)
+- `include_sofascore=1` (opsiyonel: multi icinde sofascore'u da ac)
 - `limits_url` (opsiyonel, JSON URL)
 - `refresh=1` (cache bypass)
 
 Ornek:
 ```bash
-curl "https://<worker-domain>/api/scan?scraper_source=flashscore&max_events=10&refresh=1"
+curl "https://<worker-domain>/api/scan?scraper_source=betexplorer&max_events=10&refresh=1"
 ```
 
 ## Limits JSON Formati (Cloudflare)

@@ -5,7 +5,13 @@ from typing import Any
 
 from iddiaarb.matcher import merge_similar_events
 from iddiaarb.models import Event
+from iddiaarb.providers.betexplorer_scraper import BetExplorerScraperProvider, BetExplorerScrapeError
 from iddiaarb.providers.flashscore_scraper import FlashscoreScrapeError, FlashscoreScraperProvider
+from iddiaarb.providers.livesport_scraper import (
+    LivesportScrapeError,
+    build_livesport_provider,
+    build_soccer24_provider,
+)
 from iddiaarb.providers.sofascore_scraper import SofaScrapeError, SofaScoreScraperProvider
 from iddiaarb.quality import compute_event_quality
 
@@ -19,7 +25,10 @@ class MultiScraperProvider:
         self,
         max_events: int = 40,
         include_flashscore: bool = True,
-        include_sofascore: bool = True,
+        include_soccer24: bool = True,
+        include_livesport: bool = True,
+        include_betexplorer: bool = True,
+        include_sofascore: bool = False,
         flashscore_geo_ip_code: str = "GB",
         flashscore_geo_ip_subdivision: str = "GBENG",
         flashscore_max_books: int = 8,
@@ -28,6 +37,9 @@ class MultiScraperProvider:
     ) -> None:
         self.max_events = max_events
         self.include_flashscore = include_flashscore
+        self.include_soccer24 = include_soccer24
+        self.include_livesport = include_livesport
+        self.include_betexplorer = include_betexplorer
         self.include_sofascore = include_sofascore
         self.flashscore_geo_ip_code = flashscore_geo_ip_code
         self.flashscore_geo_ip_subdivision = flashscore_geo_ip_subdivision
@@ -53,6 +65,9 @@ class MultiScraperProvider:
     def load_events(self) -> list[Event]:
         all_events: list[Event] = []
         flash_events = 0
+        soccer24_events = 0
+        livesport_events = 0
+        betexplorer_events = 0
         sofa_events = 0
         warnings: list[str] = []
 
@@ -69,6 +84,43 @@ class MultiScraperProvider:
                 all_events.extend(self._prepare_events(rows, "flashscore"))
             except FlashscoreScrapeError as exc:
                 warnings.append(f"flashscore_error={exc}")
+
+        if self.include_soccer24:
+            soccer24 = build_soccer24_provider(
+                max_events=self.max_events,
+                geo_ip_code=self.flashscore_geo_ip_code,
+                geo_ip_subdivision_code=self.flashscore_geo_ip_subdivision,
+                max_bookmakers_per_event=self.flashscore_max_books,
+            )
+            try:
+                rows = soccer24.load_events()
+                soccer24_events = len(rows)
+                all_events.extend(self._prepare_events(rows, "soccer24"))
+            except LivesportScrapeError as exc:
+                warnings.append(f"soccer24_error={exc}")
+
+        if self.include_livesport:
+            livesport = build_livesport_provider(
+                max_events=self.max_events,
+                geo_ip_code=self.flashscore_geo_ip_code,
+                geo_ip_subdivision_code=self.flashscore_geo_ip_subdivision,
+                max_bookmakers_per_event=self.flashscore_max_books,
+            )
+            try:
+                rows = livesport.load_events()
+                livesport_events = len(rows)
+                all_events.extend(self._prepare_events(rows, "livesport"))
+            except LivesportScrapeError as exc:
+                warnings.append(f"livesport_error={exc}")
+
+        if self.include_betexplorer:
+            betexplorer = BetExplorerScraperProvider(max_events=self.max_events)
+            try:
+                rows = betexplorer.load_events()
+                betexplorer_events = len(rows)
+                all_events.extend(self._prepare_events(rows, "betexplorer"))
+            except BetExplorerScrapeError as exc:
+                warnings.append(f"betexplorer_error={exc}")
 
         if self.include_sofascore:
             sofa = SofaScoreScraperProvider(
@@ -113,6 +165,9 @@ class MultiScraperProvider:
             "source": "multi_scraper",
             "events_raw_total": len(all_events),
             "flashscore_events": flash_events,
+            "soccer24_events": soccer24_events,
+            "livesport_events": livesport_events,
+            "betexplorer_events": betexplorer_events,
             "sofascore_events": sofa_events,
             "merged_events": len(merged),
             "events_with_quorum": len(quorum_events),

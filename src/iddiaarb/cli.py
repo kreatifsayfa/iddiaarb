@@ -12,12 +12,17 @@ from iddiaarb.history import backtest_report, save_run
 from iddiaarb.limits import BookmakerLimit
 from iddiaarb.notifier import safe_send_alerts
 from iddiaarb.providers import (
+    BetExplorerScrapeError,
+    BetExplorerScraperProvider,
     FlashscoreScrapeError,
     FlashscoreScraperProvider,
+    LivesportScrapeError,
     MultiScraperError,
     MultiScraperProvider,
     SofaScrapeError,
     SofaScoreScraperProvider,
+    build_livesport_provider,
+    build_soccer24_provider,
 )
 
 
@@ -75,7 +80,7 @@ def build_parser() -> argparse.ArgumentParser:
     scrape = sub.add_parser("scrape-scan", help="Scrape football odds and run arbitrage scan")
     scrape.add_argument(
         "--scraper-source",
-        choices=["flashscore", "sofascore", "multi"],
+        choices=["flashscore", "soccer24", "livesport", "betexplorer", "sofascore", "multi"],
         default="flashscore",
         help="Scraper backend",
     )
@@ -105,6 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=2,
         help="Multi-scraper source quorum filter",
+    )
+    scrape.add_argument(
+        "--include-sofascore",
+        action="store_true",
+        help="Multi-scraper: include SofaScore feed (disabled by default).",
     )
     _add_scan_args(scrape)
 
@@ -299,6 +309,34 @@ def run_scrape_scan(args: argparse.Namespace) -> int:
             events = provider.load_events()
         except FlashscoreScrapeError as exc:
             raise SystemExit(f"Scraper error: {exc}") from exc
+    elif source == "soccer24":
+        provider = build_soccer24_provider(
+            max_events=args.max_events,
+            geo_ip_code=args.geo_ip_code,
+            geo_ip_subdivision_code=args.geo_ip_subdivision,
+            max_bookmakers_per_event=args.max_bookmakers_per_event,
+        )
+        try:
+            events = provider.load_events()
+        except LivesportScrapeError as exc:
+            raise SystemExit(f"Scraper error: {exc}") from exc
+    elif source == "livesport":
+        provider = build_livesport_provider(
+            max_events=args.max_events,
+            geo_ip_code=args.geo_ip_code,
+            geo_ip_subdivision_code=args.geo_ip_subdivision,
+            max_bookmakers_per_event=args.max_bookmakers_per_event,
+        )
+        try:
+            events = provider.load_events()
+        except LivesportScrapeError as exc:
+            raise SystemExit(f"Scraper error: {exc}") from exc
+    elif source == "betexplorer":
+        provider = BetExplorerScraperProvider(max_events=args.max_events)
+        try:
+            events = provider.load_events()
+        except BetExplorerScrapeError as exc:
+            raise SystemExit(f"Scraper error: {exc}") from exc
     elif source == "sofascore":
         provider = SofaScoreScraperProvider(
             max_events=args.max_events,
@@ -314,7 +352,10 @@ def run_scrape_scan(args: argparse.Namespace) -> int:
         provider = MultiScraperProvider(
             max_events=args.max_events,
             include_flashscore=True,
-            include_sofascore=True,
+            include_soccer24=True,
+            include_livesport=True,
+            include_betexplorer=True,
+            include_sofascore=bool(args.include_sofascore),
             flashscore_geo_ip_code=args.geo_ip_code,
             flashscore_geo_ip_subdivision=args.geo_ip_subdivision,
             flashscore_max_books=args.max_bookmakers_per_event,

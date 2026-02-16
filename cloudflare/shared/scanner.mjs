@@ -1,7 +1,9 @@
-﻿import { scanEvents, computeEventQuality } from "./engine.mjs";
+import { scanEvents, computeEventQuality } from "./engine.mjs";
 import { nowIso, parseIntSafe } from "./helpers.mjs";
 import { mergeSimilarEvents } from "./matcher.mjs";
+import { loadBetExplorerEvents } from "./providers_betexplorer.mjs";
 import { loadFlashscoreEvents } from "./providers_flashscore.mjs";
+import { loadLivesportEvents, loadSoccer24Events } from "./providers_livesport.mjs";
 import { loadSofaScoreEvents } from "./providers_sofascore.mjs";
 
 function prepareEvents(rows, source) {
@@ -25,11 +27,17 @@ async function loadMultiEvents(params) {
     : 0.8;
 
   const includeFlashscore = params.include_flashscore !== false;
-  const includeSofascore = params.include_sofascore !== false;
+  const includeSoccer24 = params.include_soccer24 !== false;
+  const includeLivesport = params.include_livesport !== false;
+  const includeBetExplorer = params.include_betexplorer !== false;
+  const includeSofascore = params.include_sofascore === true;
 
   const allEvents = [];
   const warnings = [];
   let flashscoreEvents = 0;
+  let soccer24Events = 0;
+  let livesportEvents = 0;
+  let betexplorerEvents = 0;
   let sofascoreEvents = 0;
 
   const tasks = [];
@@ -43,6 +51,45 @@ async function loadMultiEvents(params) {
         })
         .catch((error) => {
           warnings.push(`flashscore_error=${String(error?.message || error)}`);
+        }),
+    );
+  }
+
+  if (includeSoccer24) {
+    tasks.push(
+      loadSoccer24Events({ ...params, max_events: maxEvents })
+        .then((result) => {
+          soccer24Events = result.events.length;
+          allEvents.push(...prepareEvents(result.events, "soccer24"));
+        })
+        .catch((error) => {
+          warnings.push(`soccer24_error=${String(error?.message || error)}`);
+        }),
+    );
+  }
+
+  if (includeLivesport) {
+    tasks.push(
+      loadLivesportEvents({ ...params, max_events: maxEvents })
+        .then((result) => {
+          livesportEvents = result.events.length;
+          allEvents.push(...prepareEvents(result.events, "livesport"));
+        })
+        .catch((error) => {
+          warnings.push(`livesport_error=${String(error?.message || error)}`);
+        }),
+    );
+  }
+
+  if (includeBetExplorer) {
+    tasks.push(
+      loadBetExplorerEvents({ ...params, max_events: maxEvents })
+        .then((result) => {
+          betexplorerEvents = result.events.length;
+          allEvents.push(...prepareEvents(result.events, "betexplorer"));
+        })
+        .catch((error) => {
+          warnings.push(`betexplorer_error=${String(error?.message || error)}`);
         }),
     );
   }
@@ -101,6 +148,9 @@ async function loadMultiEvents(params) {
       source: "multi_scraper",
       events_raw_total: allEvents.length,
       flashscore_events: flashscoreEvents,
+      soccer24_events: soccer24Events,
+      livesport_events: livesportEvents,
+      betexplorer_events: betexplorerEvents,
       sofascore_events: sofascoreEvents,
       merged_events: merged.length,
       events_with_quorum: quorumEvents.length,
@@ -117,6 +167,12 @@ export async function runScanner(params) {
   let loaded;
   if (scraperSource === "flashscore") {
     loaded = await loadFlashscoreEvents(params);
+  } else if (scraperSource === "soccer24") {
+    loaded = await loadSoccer24Events(params);
+  } else if (scraperSource === "livesport") {
+    loaded = await loadLivesportEvents(params);
+  } else if (scraperSource === "betexplorer") {
+    loaded = await loadBetExplorerEvents(params);
   } else if (scraperSource === "sofascore") {
     loaded = await loadSofaScoreEvents(params);
   } else if (scraperSource === "multi") {
