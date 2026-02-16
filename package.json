@@ -1,0 +1,14 @@
+﻿{
+  "name": "iddiaarb-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy:worker": "wrangler deploy",
+    "deploy:pages": "wrangler pages deploy site --project-name iddiaarb",
+    "check:worker": "node scripts/check_worker_syntax.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.53.1"
+  }
+}

@@ -1,0 +1,15 @@
+services:
+  iddiaarb:
+    build: .
+    container_name: iddiaarb
+    ports:
+      - "8080:80"
+    environment:
+      - PYTHON_BIN=python3
+    volumes:
+      - ./:/var/www/html/iddiaarb
+      - iddiaarb-data:/var/www/html/iddiaarb/data
+    restart: unless-stopped
+
+volumes:
+  iddiaarb-data:

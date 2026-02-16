@@ -1,0 +1,615 @@
+﻿<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iddia Arb Panel</title>
+<meta name="description" content="Scraper tabanli iddia arbitraj paneli. Flashscore, SofaScore ve multi kaynak tarama sonuclarini canli izleyin.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f2e8;
+  --bg-deep:#ebe4d3;
+  --card:#fffdf8;
+  --text:#191611;
+  --muted:#6f6659;
+  --border:#d6cab7;
+  --accent:#b1531f;
+  --accent-soft:#f7e4d7;
+  --ok:#1b7661;
+  --ok-soft:#e7f5f0;
+  --bad:#a72f24;
+  --bad-soft:#fbe8e5;
+  --shadow:0 12px 34px rgba(44, 30, 17, .10);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Bricolage Grotesque",system-ui,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(950px 420px at 4% 2%, #f9e7cd 0%, transparent 55%),
+    radial-gradient(800px 340px at 95% 10%, #d7ece4 0%, transparent 58%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+}
+.app{max-width:1360px;margin:0 auto;padding:18px}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+}
+
+.hero{
+  position:relative;
+  overflow:hidden;
+  padding:18px 18px 14px;
+  margin-bottom:14px;
+}
+.hero::after{
+  content:"";
+  position:absolute;
+  right:-68px;
+  top:-70px;
+  width:260px;
+  height:260px;
+  border-radius:40px;
+  background:linear-gradient(135deg, #f8dbc7 0%, #f0c9ae 60%, transparent 100%);
+  transform:rotate(17deg);
+  opacity:.55;
+}
+.hero-top{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:14px;
+}
+.hero h1{
+  margin:0;
+  font-size:clamp(1.42rem,2.9vw,2.05rem);
+  letter-spacing:-.03em;
+}
+.sub{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:.93rem;
+}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:.73rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--muted);
+}
+.pill.ok{border-color:#90cdb8;background:var(--ok-soft);color:var(--ok)}
+.pill.bad{border-color:#e2a9a2;background:var(--bad-soft);color:var(--bad)}
+.pill.live{animation:streamPulse 1.6s ease-in-out infinite}
+@keyframes streamPulse{
+  0%{box-shadow:0 0 0 0 rgba(27,118,97,.25)}
+  70%{box-shadow:0 0 0 8px rgba(27,118,97,0)}
+  100%{box-shadow:0 0 0 0 rgba(27,118,97,0)}
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:360px minmax(0,1fr);
+  gap:14px;
+  align-items:start;
+}
+.sidebar{position:sticky;top:10px;padding:14px}
+.block{
+  margin-bottom:10px;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+}
+.block:last-child{margin-bottom:0}
+.block h3{
+  margin:0 0 10px;
+  font-size:.74rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.field{margin-bottom:9px}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:block;
+  margin-bottom:4px;
+  font-size:.79rem;
+  color:var(--muted);
+}
+.field input,.field select{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid #ccbda7;
+  border-radius:9px;
+  font:inherit;
+  font-size:.88rem;
+  background:#fff;
+}
+.row-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.help{font-size:.72rem;line-height:1.45;color:var(--muted)}
+.help.warn{color:#8c3f14;font-weight:700}
+.help.info{
+  border:1px dashed #dbc8b0;
+  background:#fff8f0;
+  border-radius:9px;
+  padding:8px 9px;
+}
+
+.btns{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:8px;
+}
+button{
+  border:0;
+  border-radius:9px;
+  padding:10px;
+  font:inherit;
+  font-size:.84rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform .16s ease, filter .16s ease;
+}
+button:hover{transform:translateY(-1px);filter:brightness(.98)}
+button:disabled{opacity:.58;cursor:not-allowed;transform:none}
+.b1{background:var(--accent);color:#fff}
+.b2{background:#fff;border:1px solid var(--border);color:var(--text)}
+.b3{grid-column:span 2;background:#1e685b;color:#fff}
+.b4{grid-column:span 2;background:#fff;border:1px dashed #cdb79e;color:#6a4d35}
+
+.main{display:grid;gap:12px}
+.summary{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:10px;
+}
+.stat{
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+}
+.stat.emph{
+  background:linear-gradient(135deg, #fff5ec 0%, #fff 72%);
+  border-color:#d8b89f;
+}
+.stat .k{
+  font-size:.71rem;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--muted);
+}
+.stat .v{
+  margin-top:6px;
+  font-size:1.16rem;
+  font-weight:800;
+  letter-spacing:-.02em;
+}
+.panel{padding:12px}
+.head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:9px;
+}
+.head h2{
+  margin:0;
+  font-size:1rem;
+  letter-spacing:-.01em;
+}
+.hint{font-size:.8rem;color:var(--muted)}
+.msg{
+  margin-bottom:9px;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  font-size:.88rem;
+}
+.msg.warn{border-color:#e1b08d;background:#fff2e8;color:#824013}
+.msg.bad{border-color:#e2b4ad;background:#fcecea;color:#85241d}
+.table-wrap{
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+}
+table{
+  width:100%;
+  min-width:900px;
+  border-collapse:collapse;
+  font-size:.84rem;
+}
+th,td{
+  text-align:left;
+  border-bottom:1px solid #ebdfcf;
+  padding:8px 9px;
+  vertical-align:top;
+}
+th{
+  position:sticky;
+  top:0;
+  background:#fff8ef;
+  font-size:.74rem;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--muted);
+}
+.diag{
+  margin:0;
+  max-height:300px;
+  overflow:auto;
+  white-space:pre-wrap;
+  word-break:break-word;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+  background:#fff;
+  font:12px/1.45 "IBM Plex Mono",monospace;
+}
+code,.mono{font-family:"IBM Plex Mono",monospace;font-size:.78rem}
+.hidden{display:none!important}
+
+.tour-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(21, 14, 9, .52);
+  z-index:1200;
+}
+.tour-box{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  width:min(420px, calc(100vw - 24px));
+  background:#fffdf8;
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 18px 42px rgba(0,0,0,.24);
+  z-index:1300;
+  padding:12px;
+}
+.tour-k{font-size:.71rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tour-title{margin:5px 0 3px;font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.tour-text{margin:0 0 11px;font-size:.88rem;line-height:1.45;color:#4f463b}
+.tour-nav{display:flex;gap:8px;justify-content:flex-end}
+.tour-nav button{padding:8px 10px;font-size:.79rem;border-radius:8px}
+.tour-highlight{
+  position:relative;
+  z-index:1250;
+  outline:3px solid #e19d73;
+  outline-offset:2px;
+  border-radius:10px;
+  background:#fff8f2;
+}
+
+@media (max-width:1160px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static}
+  .summary{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .app{padding:12px}
+  .summary{grid-template-columns:1fr}
+  .row-2{grid-template-columns:1fr}
+  .btns{grid-template-columns:1fr}
+  .b3,.b4{grid-column:auto}
+  .hero-top{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero card">
+    <div class="hero-top">
+      <div>
+        <h1>Iddia Arb Panel</h1>
+        <p class="sub">Scraper odakli tarama, filtre ve diagnostik tek ekranda toplandi.</p>
+      </div>
+      <div class="pills">
+        <span id="clock" class="pill">--:--:--</span>
+        <span id="cache" class="pill">cache:n/a</span>
+        <span id="stream" class="pill">stream kapali</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="card sidebar">
+      <form id="frm">
+        <input id="source" type="hidden" value="scraper">
+        <input id="scraper_source" type="hidden" value="flashscore">
+        <div id="scraperBox" class="hidden"></div>
+
+        <section class="block">
+          <h3>Motor</h3>
+          <div class="row-2">
+            <div class="field">
+              <label for="bankroll">Bankroll</label>
+              <input id="bankroll" type="number" value="1000" min="1">
+            </div>
+            <div class="field">
+              <label for="min_margin">Min margin %</label>
+              <input id="min_margin" type="number" value="0" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="min_data_quality">Min data quality</label>
+              <input id="min_data_quality" type="number" value="0" min="0" max="1" step="0.01">
+            </div>
+            <div class="field">
+              <label for="min_source_quorum">Min source quorum (engine)</label>
+              <input id="min_source_quorum" type="number" value="1" min="1" max="5" step="1">
+              <div id="quorum_help" class="help">Bu alan `min_source_quorum`.</div>
+            </div>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="slippage_bps">Slippage bps</label>
+              <input id="slippage_bps" type="number" value="0" min="0" max="2000">
+            </div>
+            <div class="field">
+              <label for="rejection_rate">Rejection rate</label>
+              <input id="rejection_rate" type="number" value="0" min="0" max="1" step="0.01">
+            </div>
+          </div>
+          <div class="field">
+            <label for="limits_file">Limits JSON URL (opsiyonel)</label>
+            <input id="limits_file" placeholder="https://example.com/bookmaker_limits.json">
+          </div>
+          <div class="field">
+            <label for="api_base">API base (opsiyonel)</label>
+            <input id="api_base" placeholder="https://your-worker.workers.dev">
+            <div class="help">Bos birakirsan ayni origin kullanilir.</div>
+          </div>
+        </section>
+
+        <section class="block" id="scraper_cfg">
+          <h3>Scraper</h3>
+          <div class="field">
+            <label for="scraper_source_pick">Scraper source</label>
+            <select id="scraper_source_pick">
+              <option value="flashscore" selected>Flashscore (onerilen)</option>
+              <option value="sofascore">SofaScore</option>
+              <option value="multi">Multi (quorum)</option>
+            </select>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="max_events">Max events</label>
+              <input id="max_events" type="number" value="25" min="1" max="200">
+            </div>
+            <div class="field">
+              <label for="max_bookmakers_per_event">Max books/event</label>
+              <input id="max_bookmakers_per_event" type="number" value="8" min="1" max="30">
+            </div>
+          </div>
+
+          <div id="flash_fields">
+            <div class="field">
+              <label for="geo_strategy">Bookmaker gorunumu</label>
+              <select id="geo_strategy">
+                <option value="auto_cycle" selected>Otomatik profil dongusu (onerilen)</option>
+                <option value="manual">Manuel geo girisi</option>
+              </select>
+              <div id="geo_strategy_help" class="help info">
+                Tum dunyadaki eventler taranir. Bu ayar eventleri filtrelemez; sadece Flashscore tarafinda hangi bookmaker gorunumunun acik oldugunu belirler.
+              </div>
+            </div>
+            <div id="geo_active" class="help">Aktif profil: -</div>
+            <div id="geo_manual" class="row-2 hidden">
+              <div class="field">
+                <label for="geo_ip_code">Bookmaker geo code (event filtresi degil)</label>
+                <input id="geo_ip_code" value="GB">
+              </div>
+              <div class="field">
+                <label for="geo_ip_subdivision">Bookmaker geo subdivision</label>
+                <input id="geo_ip_subdivision" value="GBENG">
+              </div>
+            </div>
+          </div>
+
+          <div id="sofa_fields" class="hidden">
+            <div class="row-2">
+              <div class="field">
+                <label for="stale_threshold_sec">Stale sec</label>
+                <input id="stale_threshold_sec" type="number" value="900" min="10" max="86400">
+              </div>
+              <div class="field">
+                <label for="sample_check">Sample check</label>
+                <input id="sample_check" type="number" value="5" min="0" max="50">
+              </div>
+            </div>
+            <div class="field">
+              <label><input id="include_prematch" type="checkbox" value="1"> include prematch</label>
+            </div>
+          </div>
+
+          <div id="multi_fields" class="hidden">
+            <div class="field">
+              <label for="quorum_min_sources">Quorum min sources (provider)</label>
+              <input id="quorum_min_sources" type="number" value="2" min="1" max="3">
+              <div class="help">Bu alan sadece `quorum_min_sources` icin.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>Calistir</h3>
+          <div class="field">
+            <label for="interval">Stream interval (sn)</label>
+            <input id="interval" type="number" value="20" min="3" max="120">
+          </div>
+          <div class="btns">
+            <button id="run" class="b1" type="submit">Tek Tarama</button>
+            <button id="refresh" class="b2" type="button">Yenile</button>
+            <button id="streamBtn" class="b3" type="button">Canli Stream Baslat</button>
+            <button id="tourBtn" class="b4" type="button">Ayarlari Tanit</button>
+          </div>
+        </section>
+      </form>
+    </aside>
+
+    <main class="main">
+      <section class="summary">
+        <article class="stat emph">
+          <div class="k">Firsat</div>
+          <div id="c1" class="v">0</div>
+        </article>
+        <article class="stat">
+          <div class="k">En iyi margin</div>
+          <div id="c2" class="v">0.00%</div>
+        </article>
+        <article class="stat">
+          <div class="k">Taranan event</div>
+          <div id="c3" class="v">0</div>
+        </article>
+        <article class="stat">
+          <div class="k">Son guncelleme</div>
+          <div id="c4" class="v" style="font-size:1rem">-</div>
+        </article>
+      </section>
+
+      <section class="card panel">
+        <div class="head">
+          <h2>Sonuclar</h2>
+          <div id="hint" class="hint">Tarama bekleniyor.</div>
+        </div>
+        <div id="msg" class="msg">Formu gonder ve sonucu izle.</div>
+        <div class="table-wrap">
+          <table id="tbl" class="hidden">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Event</th>
+                <th>Market</th>
+                <th>Margin</th>
+                <th>Exp Profit</th>
+                <th>Risk</th>
+                <th>Quality</th>
+                <th>Books</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <div class="head">
+          <h2>Diyagnostik</h2>
+          <div class="hint">0 firsatin nedeni burada gorunur</div>
+        </div>
+        <pre id="diag" class="diag">{}</pre>
+      </section>
+    </main>
+  </div>
+</div>
+<div id="tourBackdrop" class="tour-backdrop hidden"></div>
+<section id="tourBox" class="tour-box hidden" aria-live="polite">
+  <div id="tourStep" class="tour-k">Ayar Tanitimi</div>
+  <h3 id="tourTitle" class="tour-title">Panel Turu</h3>
+  <p id="tourText" class="tour-text">Bu tur, soldaki tum ayarlari tek tek ne ise yaradigiyla gosterir.</p>
+  <div class="tour-nav">
+    <button id="tourSkip" type="button" class="b2">Gec</button>
+    <button id="tourPrev" type="button" class="b2">Geri</button>
+    <button id="tourNext" type="button" class="b1">Ileri</button>
+  </div>
+</section>
+<script>
+const $=id=>document.getElementById(id);
+const E={source:$('source'),scraper:$('scraper_source'),scraperPick:$('scraper_source_pick'),scraperBox:$('scraperBox'),scrCfg:$('scraper_cfg'),flash:$('flash_fields'),sofa:$('sofa_fields'),multi:$('multi_fields'),minSq:$('min_source_quorum'),qHelp:$('quorum_help'),run:$('run'),refresh:$('refresh'),streamBtn:$('streamBtn'),tourBtn:$('tourBtn'),clock:$('clock'),cache:$('cache'),stream:$('stream'),msg:$('msg'),hint:$('hint'),rows:$('rows'),tbl:$('tbl'),diag:$('diag'),c1:$('c1'),c2:$('c2'),c3:$('c3'),c4:$('c4'),tourBackdrop:$('tourBackdrop'),tourBox:$('tourBox'),tourStep:$('tourStep'),tourTitle:$('tourTitle'),tourText:$('tourText'),tourPrev:$('tourPrev'),tourNext:$('tourNext'),tourSkip:$('tourSkip'),geoStrategy:$('geo_strategy'),geoManual:$('geo_manual'),geoActive:$('geo_active'),apiBase:$('api_base')};
+let streamTimer=null,busy=false,streamTick=null,nextStreamDueMs=0,streamHasPacket=false,lastStreamInterval=20;
+const TOUR_KEY='iddiaarb_settings_tour_v1';
+const GEO_KEY='iddiaarb_geo_auto_idx_v1';
+const API_BASE_KEY='iddiaarb_api_base_v1';
+const GEO_AUTO_PROFILES=[
+  {code:'GB',sub:'GBENG',label:'Avrupa/UK gorunumu (GB-GBENG)'},
+  {code:'US',sub:'USNJ',label:'Kuzey Amerika gorunumu (US-USNJ)'},
+  {code:'BR',sub:'BRSP',label:'Guney Amerika gorunumu (BR-BRSP)'}
+];
+const num=(v,d)=>{const n=Number(v);return Number.isFinite(n)?n:d};
+const int=(v,d)=>{const n=parseInt(v,10);return Number.isFinite(n)?n:d};
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+const pct=v=>`${num(v,0).toFixed(2)}%`;
+const money=v=>num(v,0).toFixed(2);
+const stamp=s=>{if(!s)return '-';const d=new Date(s);return Number.isNaN(d.getTime())?String(s):`${d.toLocaleDateString()} ${d.toLocaleTimeString()}`};
+function setMsg(t,k=''){E.msg.className='msg'+(k?` ${k}`:'');E.msg.textContent=t}
+function setCache(v){E.cache.className='pill';if(v===true){E.cache.classList.add('ok');E.cache.textContent='cache:hit'}else if(v===false){E.cache.textContent='cache:bypass'}else{E.cache.textContent='cache:n/a'}}
+function getApiBase(){const raw=(E.apiBase?.value||'').trim();return raw.replace(/\/+$/,'')}
+function apiUrl(path,query){const base=getApiBase();const qs=query?`?${query.toString()}`:'';if(base)return `${base}${path}${qs}`;return `${path}${qs}`}
+function enforceFixedSource(){E.source.value='scraper';E.scraper.value=E.scraperPick?.value||'flashscore'}
+function getAutoGeo(offset=0){let idx=0;try{idx=int(localStorage.getItem(GEO_KEY),0)}catch(_){idx=0}const pick=(idx+offset)%GEO_AUTO_PROFILES.length;return GEO_AUTO_PROFILES[pick]}
+function takeAutoGeo(){let idx=0;try{idx=int(localStorage.getItem(GEO_KEY),0)}catch(_){idx=0}const pick=idx%GEO_AUTO_PROFILES.length;try{localStorage.setItem(GEO_KEY,String(idx+1))}catch(_){ }return GEO_AUTO_PROFILES[pick]}
+function vis(){enforceFixedSource();E.scraperBox.classList.add('hidden');E.scrCfg.classList.remove('hidden');const source=E.scraperPick?.value||'flashscore';E.flash.classList.toggle('hidden',source==='sofascore');E.sofa.classList.toggle('hidden',source==='flashscore');E.multi.classList.toggle('hidden',source!=='multi');if(source==='multi'){E.qHelp.className='help';E.qHelp.textContent='Bu alan `min_source_quorum`. Multi kaynakta en az kac kaynaktan dogrulama istendigini belirler.'}else{E.qHelp.className='help';E.qHelp.textContent='Bu alan `min_source_quorum`. Eventin en az kac kaynaktan gelmesi gerektigini belirler.'}const manual=E.geoStrategy.value==='manual';E.geoManual.classList.toggle('hidden',!manual);if(manual){E.geoActive.textContent=`Manuel profil: ${(($('geo_ip_code').value||'GB').toUpperCase())}-${(($('geo_ip_subdivision').value||'GBENG').toUpperCase())}`}else{const preview=getAutoGeo(0);E.geoActive.textContent=`Otomatik sonraki profil: ${preview.label}`}}
+function params(){enforceFixedSource();const p=new URLSearchParams();p.set('bankroll',String(num($('bankroll').value,1000)));p.set('min_margin',String(num($('min_margin').value,0)));p.set('min_data_quality',String(num($('min_data_quality').value,0)));p.set('slippage_bps',String(num($('slippage_bps').value,0)));p.set('rejection_rate',String(num($('rejection_rate').value,0)));const minSq=int(E.minSq.value,1);p.set('min_source_quorum',String(Math.max(1,Math.min(5,minSq))));const lf=$('limits_file').value.trim();if(lf)p.set('limits_url',lf);const scraperSource=E.scraperPick?.value||'flashscore';p.set('scraper_source',scraperSource);p.set('max_events',String(int($('max_events').value,25)));p.set('max_bookmakers_per_event',String(int($('max_bookmakers_per_event').value,8)));p.set('stale_threshold_sec',String(int($('stale_threshold_sec').value,900)));p.set('sample_check',String(int($('sample_check').value,5)));p.set('include_prematch',$('include_prematch').checked?'1':'0');let geoCode='GB',geoSub='GBENG';if(E.geoStrategy.value==='manual'){geoCode=(($('geo_ip_code').value.trim()||'GB').toUpperCase());geoSub=(($('geo_ip_subdivision').value.trim()||'GBENG').toUpperCase())}else{const prof=takeAutoGeo();geoCode=prof.code;geoSub=prof.sub;$('geo_ip_code').value=geoCode;$('geo_ip_subdivision').value=geoSub}p.set('geo_ip_code',geoCode);p.set('geo_ip_subdivision',geoSub);p.set('quorum_min_sources',String(int($('quorum_min_sources').value,2)));return p}
+function render(data){E.diag.textContent=JSON.stringify({ok:!!data?.ok,cached:data?.cached??null,generated_at:data?.generated_at??null,params:data?.params??null,count:int(data?.scan?.count,0),meta:data?.scan?.meta??{},error:data?.error??null},null,2);if(!data?.ok){setMsg(`Tarama hatasi: ${data?.error||'unknown'}`,'bad');setCache(null);E.hint.textContent='Hata';E.tbl.classList.add('hidden');E.rows.innerHTML='';E.c1.textContent='0';E.c2.textContent='0.00%';E.c3.textContent='0';E.c4.textContent='-';return}setCache(data.cached);const s=data.scan||{},op=Array.isArray(s.opportunities)?s.opportunities:[],m=s.meta||{};const scanned=int(m.events_with_h2h,NaN)||int(m.events_with_quorum,NaN)||int(m.events_attempted,NaN)||int(m.events_in,NaN)||0;const best=op.reduce((a,r)=>Math.max(a,num(r.margin_pct,0)),0);E.c1.textContent=String(op.length);E.c2.textContent=pct(best);E.c3.textContent=String(scanned);E.c4.textContent=stamp(data.generated_at||m.fetched_at);const sourceLabel=`source=${data.params?.scraper_source||'flashscore'}`;E.hint.textContent=`${sourceLabel}, scanned=${scanned}, books_max=${int(m.max_distinct_books_per_event,0)}`;
+if(!op.length){setMsg(`No arbitrage opportunities.${m.arbitrage_blocker?` ${m.arbitrage_blocker}`:''}`,'warn');E.tbl.classList.add('hidden');E.rows.innerHTML='';return}
+setMsg(`Toplam ${op.length} firsat bulundu.`);E.rows.innerHTML=op.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.event||'')}</td><td><span class="mono">${esc(r.market||'-')}</span></td><td>${pct(r.margin_pct)}</td><td>${money(r.expected_profit)}</td><td>${num(r.risk_score,0).toFixed(1)}</td><td>${num(r.data_quality_score,0).toFixed(2)} / src ${int(r.source_count,0)}</td><td>${Object.entries(r.bookmakers||{}).map(([k,v])=>`<div><code>${esc(k)}</code>: ${esc(v)}</div>`).join('')}</td></tr>`).join('');E.tbl.classList.remove('hidden')}
+async function scan(forceRefresh=true){if(busy)return;busy=true;E.run.disabled=true;E.refresh.disabled=true;E.run.textContent='Taraniyor...';try{const p=params();if(forceRefresh)p.set('refresh','1');const res=await fetch(apiUrl('/api/scan',p),{cache:'no-store'});render(await res.json())}catch(e){render({ok:false,error:String(e)})}finally{busy=false;E.run.disabled=false;E.refresh.disabled=false;E.run.textContent='Tek Tarama'}}
+function stopStream(){if(streamTimer){clearInterval(streamTimer);streamTimer=null}if(streamTick){clearInterval(streamTick);streamTick=null}E.stream.className='pill';E.stream.textContent='stream kapali';E.streamBtn.textContent='Canli Stream Baslat';streamHasPacket=false;nextStreamDueMs=0}
+function startStreamTicker(){if(streamTick)clearInterval(streamTick);streamTick=setInterval(()=>{if(!streamTimer)return;const remain=Math.max(0,Math.ceil((nextStreamDueMs-Date.now())/1000));E.stream.className='pill ok live';E.stream.textContent=streamHasPacket?`stream acik - sonraki paket ${remain}s`:`stream acik - ilk paket ${remain}s`},250)}
+function startStream(){stopStream();lastStreamInterval=Math.max(3,Math.min(120,int($('interval').value,20)));streamHasPacket=false;nextStreamDueMs=Date.now()+(lastStreamInterval*1000);startStreamTicker();E.streamBtn.textContent='Canli Stream Durdur';setMsg(`Canli stream aktif. Ilk veri paketi bekleniyor (yaklasik ${lastStreamInterval}s).`);E.hint.textContent='Stream acik, veri bekleniyor...';streamTimer=setInterval(async()=>{await scan(true);if(!streamHasPacket){streamHasPacket=true;setMsg('Canli stream veri almaya basladi.')}} ,lastStreamInterval*1000);scan(true);nextStreamDueMs=Date.now()+(lastStreamInterval*1000)}
+const tourSteps=[
+  {id:'bankroll',title:'Bankroll',text:'Tarama sonucunda stake dagitimi bu toplam sermaye uzerinden hesaplanir.'},
+  {id:'min_margin',title:'Min margin %',text:'Bulunan firsatlarin minimum kar marji esigini belirler.'},
+  {id:'min_data_quality',title:'Min data quality',text:'Veri kalitesi dusuk eventleri elemek icin kullanilir.'},
+  {id:'min_source_quorum',title:'Min source quorum (engine)',text:'Arbitraj hesaplanmadan once eventin kac farkli kaynaktan teyit edilmesi gerektigini belirler.'},
+  {id:'slippage_bps',title:'Slippage bps',text:'Gercek uygulamada oran kaymasi riskini simule eder; arttikca beklenen kar duser.'},
+  {id:'rejection_rate',title:'Rejection rate',text:'Bahis kabul edilmeme olasiligini risk cezasina yansitir.'},
+  {id:'limits_file',title:'Limits URL',text:'Cloudflare modunda limit dosyasi URL olarak verilir. JSON yapisi {bookmakers:{...}} olmalidir.'},
+  {id:'api_base',title:'API base',text:'Panel Pages uzerinde, API ayri bir Worker domainindeyse bu alana Worker URL yazilir.'},
+  {id:'scraper_source_pick',title:'Scraper source',text:'Tarama kaynagini secersin: flashscore, sofascore veya multi.'},
+  {id:'max_events',title:'Max events',text:'Her taramada incelenecek maksimum etkinlik sayisini belirler.'},
+  {id:'max_bookmakers_per_event',title:'Max books/event',text:'Bir event icin toplanacak maksimum bookmaker sayisidir.'},
+  {id:'geo_strategy',title:'Bookmaker gorunumu',text:'Kritik nokta: Bu ayar event havuzunu daraltmaz. Hala tum dunyadaki eventler taranir; sadece hangi bookmaker gorunum profiliyle oran cekilecegini belirler.'},
+  {id:'geo_ip_code',title:'Manuel geo code',text:'Sadece manuel modda acilir. Flashscore tarafinda bookmaker kapsamini degistirir.'},
+  {id:'geo_ip_subdivision',title:'Manuel geo subdivision',text:'Geo code ile birlikte bolgesel bookmaker gorunumunu belirler.'},
+  {id:'quorum_min_sources',title:'Quorum min sources (provider)',text:'Multi provider seviyesinde eventin gecmesi icin gereken minimum kaynak sayisidir.'},
+  {id:'interval',title:'Stream interval',text:'Canli stream acikken tarama tekrar periyodunu saniye cinsinden belirler.'}
+];
+let tourIndex=-1;
+function clearTourHighlight(){document.querySelectorAll('.tour-highlight').forEach(el=>el.classList.remove('tour-highlight'))}
+function closeTour(markDone){clearTourHighlight();E.tourBackdrop.classList.add('hidden');E.tourBox.classList.add('hidden');if(markDone){try{localStorage.setItem(TOUR_KEY,'1')}catch(_){}}tourIndex=-1}
+function renderTour(){if(tourIndex<0||tourIndex>=tourSteps.length){closeTour(true);return}let step=tourSteps[tourIndex];let el=$(step.id);while((!el||el.offsetParent===null)&&tourIndex<tourSteps.length-1){tourIndex+=1;step=tourSteps[tourIndex];el=$(step.id)}if(!el){closeTour(false);return}clearTourHighlight();el.classList.add('tour-highlight');el.scrollIntoView({behavior:'smooth',block:'center'});E.tourStep.textContent=`Adim ${tourIndex+1}/${tourSteps.length}`;E.tourTitle.textContent=step.title;E.tourText.textContent=step.text;E.tourPrev.disabled=tourIndex===0;E.tourNext.textContent=tourIndex===tourSteps.length-1?'Bitir':'Ileri'}
+function startTour(fromStart=true){if(fromStart)tourIndex=0;E.tourBackdrop.classList.remove('hidden');E.tourBox.classList.remove('hidden');renderTour()}
+$('frm').addEventListener('submit',e=>{e.preventDefault();scan(true)});
+E.refresh.addEventListener('click',()=>scan(true));
+E.streamBtn.addEventListener('click',()=>streamTimer?stopStream():startStream());
+E.tourBtn.addEventListener('click',()=>startTour(true));
+E.tourSkip.addEventListener('click',()=>closeTour(true));
+E.tourBackdrop.addEventListener('click',()=>closeTour(false));
+E.tourPrev.addEventListener('click',()=>{if(tourIndex>0){tourIndex-=1;renderTour()}});
+E.tourNext.addEventListener('click',()=>{if(tourIndex>=tourSteps.length-1){closeTour(true);return}tourIndex+=1;renderTour()});
+['min_source_quorum','geo_strategy','geo_ip_code','geo_ip_subdivision','scraper_source_pick'].forEach(id=>$(id).addEventListener('change',vis));
+E.apiBase.addEventListener('change',()=>{try{localStorage.setItem(API_BASE_KEY,E.apiBase.value.trim())}catch(_){ }});
+window.addEventListener('beforeunload',stopStream);
+setInterval(()=>E.clock.textContent=new Date().toLocaleTimeString(),1000);
+E.clock.textContent=new Date().toLocaleTimeString();
+try{const saved=localStorage.getItem(API_BASE_KEY);if(saved)E.apiBase.value=saved}catch(_){ }
+vis();
+scan(true);
+setTimeout(()=>{let done=false;try{done=localStorage.getItem(TOUR_KEY)==='1'}catch(_){done=false}if(!done)startTour(true)},800);
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(python3 -m py_compile:*)",
+      "Bash(ls:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m iddiaarb.cli:*)",
+      "Bash(php -r:*)",
+      "Bash(\"C:\\\\xampp\\\\php\\\\php.exe\" -r \"echo json_encode\\(require ''C:/xampp/htdocs/iddiaarb/site/config.php'', JSON_PRETTY_PRINT\\);\")",
+      "Bash(\"C:\\\\xampp\\\\php\\\\php.exe\" -l \"C:/xampp/htdocs/iddiaarb/site/api.php\")",
+      "Bash(\"C:\\\\xampp\\\\php\\\\php.exe\" -l:*)",
+      "Bash(\"C:\\\\xampp\\\\php\\\\php.exe\" -l \"C:/xampp/htdocs/iddiaarb/site/health.php\")",
+      "Bash(\"C:\\\\xampp\\\\php\\\\php.exe\":*)",
+      "Bash(\"C:\\\\xampp\\\\php\\\\php.exe\" -l \"C:/xampp/htdocs/iddiaarb/site/config.php\")",
+      "Bash(python -c:*)"
+    ]
+  }
+}

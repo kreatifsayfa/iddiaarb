@@ -1,0 +1,22 @@
+{
+  "bookmakers": {
+    "bet365": {
+      "min_stake": 5,
+      "max_stake": 750,
+      "max_payout": 5000,
+      "commission_pct": 0
+    },
+    "BetMGM": {
+      "min_stake": 2,
+      "max_stake": 400,
+      "max_payout": 3000,
+      "commission_pct": 0
+    },
+    "Betway": {
+      "min_stake": 1,
+      "max_stake": 350,
+      "max_payout": 2500,
+      "commission_pct": 0
+    }
+  }
+}

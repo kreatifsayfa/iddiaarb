@@ -1,0 +1,39 @@
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*.log
+
+# Project specific
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# State
+.state/
+
+# Site cache
+site/cache/*.json
+
+# Temporary files
+tmp_*
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / Cloudflare
+node_modules/
+.wrangler/
+
+# OS
+.DS_Store
+Thumbs.db
