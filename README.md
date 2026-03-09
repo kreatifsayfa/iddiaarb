@@ -85,6 +85,7 @@ Temel parametreler:
 - `include_sofascore=1` (opsiyonel: multi icinde sofascore'u da ac)
 - `limits_url` (opsiyonel, JSON URL)
 - `refresh=1` (cache bypass)
+- `use_cache=1` (opsiyonel: varsayilan canli moddur, cache kapali gelir)
 
 Ornek:
 ```bash
