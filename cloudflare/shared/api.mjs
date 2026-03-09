@@ -144,6 +144,7 @@ function parseScanParams(request, env) {
     quorum_min_sources: readInt(search, "quorum_min_sources", 2),
     betexplorer_lang: readString(search, "betexplorer_lang", "en"),
     refresh: readString(search, "refresh", "0") === "1",
+    use_cache: readBool(search, "use_cache", false),
     limits_url: readString(search, "limits_url", ""),
     timeout_ms: Math.max(5000, parseIntSafe(env?.SCRAPER_TIMEOUT_MS, 20000)),
   };
@@ -251,7 +252,7 @@ export async function handleScanRequest(request, env) {
   const cacheKey = makeCacheKey(params);
 
   cleanupCache(nowMs);
-  if (!params.refresh) {
+  if (params.use_cache && !params.refresh) {
     const cached = SCAN_CACHE.get(cacheKey);
     if (cached && cached.expires_at > nowMs) {
       return jsonResponse(
@@ -274,6 +275,9 @@ export async function handleScanRequest(request, env) {
       ok: true,
       cached: false,
       generated_at: nowIso(),
+      freshness: {
+        mode: params.use_cache ? "cache-enabled" : "live-only",
+      },
       params: {
         bankroll: params.bankroll,
         min_margin: params.min_margin,
@@ -301,10 +305,12 @@ export async function handleScanRequest(request, env) {
       scan,
     };
 
-    SCAN_CACHE.set(cacheKey, {
-      expires_at: nowMs + cacheTtlSec * 1000,
-      payload,
-    });
+    if (params.use_cache) {
+      SCAN_CACHE.set(cacheKey, {
+        expires_at: nowMs + cacheTtlSec * 1000,
+        payload,
+      });
+    }
 
     return jsonResponse(200, payload, corsOrigin);
   } catch (error) {
@@ -346,4 +352,3 @@ export function handleOptions(env) {
   const corsOrigin = env?.CORS_ORIGIN || "*";
   return corsOnlyResponse(corsOrigin);
 }
-
