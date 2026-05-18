@@ -92,7 +92,7 @@ if ($staleThresholdSec < 10 || $staleThresholdSec > 86400) {
 if ($sampleCheck < 0 || $sampleCheck > 50) {
     respond(400, ['ok' => false, 'error' => 'Invalid sample_check']);
 }
-if (!in_array($scraperSource, ['flashscore', 'sofascore', 'multi'], true)) {
+if (!in_array($scraperSource, ['flashscore', 'soccer24', 'livesport', 'betexplorer', 'sofascore', 'multi'], true)) {
     respond(400, ['ok' => false, 'error' => 'Invalid scraper_source']);
 }
 if (!preg_match('/^[A-Z]{2,10}$/', $geoIpCode)) {

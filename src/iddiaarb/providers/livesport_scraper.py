@@ -164,6 +164,11 @@ class LivesportScraperProvider:
         )
 
         sep = chr(172)
+        if sep not in raw:
+            snippet = raw[:120].strip().replace("\n", " ")
+            raise LivesportScrapeError(
+                f"Unexpected feed response from {self.feed_url} (no delimiter): {snippet!r}"
+            )
         tokens = raw.split(sep)
         events: list[dict[str, Any]] = []
         current_league = "Football"

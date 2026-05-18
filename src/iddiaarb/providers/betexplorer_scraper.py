@@ -275,6 +275,13 @@ class BetExplorerScraperProvider:
                 "Referer": "https://www.google.com/",
             },
         )
+        lower = list_html.lower()
+        looks_html = any(tag in lower for tag in ("<html", "<body", "<!doctype", "<table", "<div"))
+        if not looks_html:
+            snippet = list_html[:120].strip().replace("\n", " ")
+            raise BetExplorerScrapeError(
+                f"Unexpected listing response from {self.LIST_URL} (not HTML): {snippet!r}"
+            )
         scan_limit = min(max(20, self.max_events * 6), 300)
         listed_events = self._parse_events_table(list_html, max_rows=scan_limit)
         if not listed_events:

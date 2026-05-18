@@ -135,7 +135,27 @@ class MultiScraperProvider:
                 warnings.append(f"sofascore_error={exc}")
 
         if not all_events:
-            raise MultiScraperError("No scraper data available from selected sources")
+            blocker = (
+                "All selected scraper sources failed; see warnings."
+                if warnings
+                else "No selected scraper sources returned events."
+            )
+            self.last_diagnostics = {
+                "source": "multi_scraper",
+                "events_raw_total": 0,
+                "flashscore_events": flash_events,
+                "soccer24_events": soccer24_events,
+                "livesport_events": livesport_events,
+                "betexplorer_events": betexplorer_events,
+                "sofascore_events": sofa_events,
+                "merged_events": 0,
+                "events_with_quorum": 0,
+                "quorum_min_sources": self.quorum_min_sources,
+                "match_links": 0,
+                "warnings": warnings,
+                "arbitrage_blocker": blocker,
+            }
+            return []
 
         merged, decisions = merge_similar_events(
             all_events,

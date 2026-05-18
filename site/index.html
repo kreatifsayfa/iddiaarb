@@ -72,10 +72,19 @@ function params(refresh=true){const p=new URLSearchParams();
 ['bankroll','min_margin','min_data_quality','min_source_quorum','slippage_bps','rejection_rate','max_events','max_bookmakers_per_event','geo_ip_code','geo_ip_subdivision','quorum_min_sources'].forEach(k=>p.set(k,$(k).value));
 p.set('scraper_source',$('scraper_source_pick').value);p.set('refresh',refresh?'1':'0');p.set('use_cache',$('use_cache').checked?'1':'0');
 const lf=$("limits_file").value.trim();if(lf)p.set('limits_url',lf);return p;}
-function setRows(data){const ops=data?.scan?.opportunities||[];E.rows.innerHTML=ops.map((o,i)=>`<tr><td>${i+1}</td><td>${o.event_name||'-'}</td><td>${o.market||'-'}</td><td>${num(o.margin_pct,0).toFixed(2)}%</td><td>${num(o.expected_profit,0).toFixed(2)}</td><td>${num(o.risk_score,0).toFixed(2)}</td><td>${num(o.data_quality,0).toFixed(2)}</td><td>${(o.legs||[]).map(x=>`${x.bookmaker}@${x.odds}`).join('<br>')}</td></tr>`).join('');
-E.c1.textContent=String(ops.length);E.c2.textContent=`${num(ops[0]?.margin_pct,0).toFixed(2)}%`;E.c3.textContent=String(data?.scan?.meta?.events_in||0);E.c4.textContent=new Date(data.generated_at||Date.now()).toLocaleTimeString();
-E.diag.textContent=JSON.stringify(data?.scan?.meta||{},null,2);E.cache.textContent=data.cached?'cache:hit':'cache:bypass';}
-async function scan(refresh=true){E.msg.textContent='Tarama yapılıyor...';try{const r=await fetch(url('/api/scan',params(refresh)));const d=await r.json();if(!d.ok){E.msg.textContent='Hata: '+(d.error||'bilinmiyor');return;}E.msg.innerHTML=`<span class="ok">Güncel veri alındı.</span> kaynak: <b>${d.params.scraper_source}</b> / mod: <b>${d.freshness?.mode||'-'}</b>`;setRows(d);}catch(e){E.msg.textContent='Bağlantı hatası: '+e.message;}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function legsFromOpp(o){const books=o.bookmakers||{};const odds=o.outcomes||{};return Object.keys(odds).map(k=>`<div><code>${esc(k)}</code>: ${esc(books[k]||'?')} @ ${num(odds[k],0).toFixed(2)}</div>`).join('')}
+function setRows(data){const ops=data?.scan?.opportunities||[];E.rows.innerHTML=ops.map((o,i)=>`<tr><td>${i+1}</td><td>${esc(o.event||'-')}</td><td><code>${esc(o.market||'-')}</code></td><td>${num(o.margin_pct,0).toFixed(2)}%</td><td>${num(o.expected_profit,0).toFixed(2)}</td><td>${num(o.risk_score,0).toFixed(2)}</td><td>${num(o.data_quality_score,0).toFixed(2)}</td><td>${legsFromOpp(o)}</td></tr>`).join('');
+E.c1.textContent=String(ops.length);E.c2.textContent=`${num(ops[0]?.margin_pct,0).toFixed(2)}%`;
+const m=data?.scan?.meta||{};const scanned=Number(m.events_with_h2h||m.events_with_quorum||m.events_attempted||m.events_in||0);
+E.c3.textContent=String(scanned);E.c4.textContent=new Date(data.generated_at||Date.now()).toLocaleTimeString();
+E.diag.textContent=JSON.stringify(m,null,2);E.cache.textContent=data.cached?'cache:hit':'cache:bypass';
+const warnings=Array.isArray(m.warnings)?m.warnings:[];const blocker=m.arbitrage_blocker||'';
+if(ops.length>0){E.msg.innerHTML=`<span class="ok">${ops.length} fırsat bulundu.</span> kaynak: <b>${esc(data.params?.scraper_source||'-')}</b> / mod: <b>${esc(data.freshness?.mode||'-')}</b>`;}
+else if(warnings.length>0){E.msg.innerHTML=`<b>Uyarılar:</b><br>${warnings.map(esc).join('<br>')}`;}
+else if(blocker){E.msg.textContent=blocker;}
+else{E.msg.innerHTML=`Veri alındı, fırsat yok. Tarana event: ${scanned}.`;}}
+async function scan(refresh=true){E.msg.textContent='Tarama yapılıyor...';try{const r=await fetch(url('/api/scan',params(refresh)));const d=await r.json();if(!d.ok){E.msg.textContent='Hata: '+(d.error||'bilinmiyor');E.diag.textContent=JSON.stringify(d,null,2);return;}setRows(d);}catch(e){E.msg.textContent='Bağlantı hatası: '+e.message;}}
 function toggle(){if(timer){clearInterval(timer);timer=null;E.stream.textContent='stream:kapalı';E.streamBtn.textContent='Canlı stream başlat';return}const sec=Math.max(3,Math.min(120,parseInt($("interval").value||'15',10)));timer=setInterval(()=>scan(true),sec*1000);E.stream.textContent='stream:açık';E.streamBtn.textContent='Canlı stream durdur';scan(true)}
 E.frm.addEventListener('submit',e=>{e.preventDefault();scan(true)});E.streamBtn.addEventListener('click',toggle);setInterval(()=>E.clock.textContent=new Date().toLocaleTimeString(),1000);scan(true);
 </script>

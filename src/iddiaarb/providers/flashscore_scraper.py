@@ -173,6 +173,11 @@ class FlashscoreScraperProvider:
         )
 
         sep = chr(172)  # Flashscore feed field delimiter
+        if sep not in raw:
+            snippet = raw[:120].strip().replace("\n", " ")
+            raise FlashscoreScrapeError(
+                f"Unexpected feed response from {self.FEED_URL} (no delimiter): {snippet!r}"
+            )
         tokens = raw.split(sep)
         events: list[dict[str, Any]] = []
         current_league = "Flashscore Football"

@@ -110,7 +110,27 @@ async function loadMultiEvents(params) {
   await Promise.all(tasks);
 
   if (allEvents.length === 0) {
-    throw new Error("No scraper data available from selected sources");
+    return {
+      events: [],
+      diagnostics: {
+        source: "multi_scraper",
+        events_raw_total: 0,
+        flashscore_events: flashscoreEvents,
+        soccer24_events: soccer24Events,
+        livesport_events: livesportEvents,
+        betexplorer_events: betexplorerEvents,
+        sofascore_events: sofascoreEvents,
+        merged_events: 0,
+        events_with_quorum: 0,
+        quorum_min_sources: quorumMinSources,
+        match_links: 0,
+        warnings,
+        arbitrage_blocker:
+          warnings.length > 0
+            ? "All selected scraper sources failed; see warnings."
+            : "No selected scraper sources returned events.",
+      },
+    };
   }
 
   const { merged, decisions } = mergeSimilarEvents(allEvents, matcherConfidence, 90);
